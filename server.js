@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Database health check with error debugger
 app.get('/api/health', async (req, res) => {
     try {
         await pool.query('SELECT NOW()');
@@ -21,10 +22,15 @@ app.get('/api/health', async (req, res) => {
             database: 'connected',
             project: 'API Sentinel'
         });
+
     } catch (error) {
+        console.error('DATABASE ERROR:', error);
+
         res.status(500).json({
             status: 'error',
-            message: 'Database connection failed'
+            message: 'Database connection failed',
+            detailedError: error.message,
+            code: error.code
         });
     }
 });
