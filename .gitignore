@@ -1,3 +1,5 @@
 node_modules/
 .env
-*.log
+*.log.shopke-api-key
+.shopke-api-key
+admin-cookies.txt
