@@ -48,3 +48,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+
+    if (togglePassword && passwordInput) {
+        togglePassword.addEventListener('click', () => {
+            const isHidden = passwordInput.type === 'password';
+
+            passwordInput.type = isHidden ? 'text' : 'password';
+
+            togglePassword.textContent = isHidden ? 'Hide' : 'Show';
+
+            togglePassword.setAttribute(
+                'aria-label',
+                isHidden ? 'Hide password' : 'Show password'
+            );
+
+            togglePassword.setAttribute(
+                'aria-pressed',
+                String(isHidden)
+            );
+        });
+    }
+});

@@ -3,52 +3,172 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login | API Sentinel</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="login.js" defer></script>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Administrator Login | API Sentinel</title>
+
+    <link rel="stylesheet" href="/login.css">
+    <script src="/login.js" defer></script>
 </head>
-<body>
-    <header>
-        <h1>API Sentinel</h1>
-        <p>Security Monitoring System</p>
-    </header>
 
-    <main>
-        <section class="login-container">
-            <h2>Administrator Login</h2>
-            <p>Sign in to access the security dashboard.</p>
+<body class="login-page">
 
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        autocomplete="username"
-                        required
-                    >
+    <main class="login-layout">
+
+        <!-- BRANDING PANEL -->
+        <section class="login-brand-panel">
+            <div class="login-brand">
+                <div class="login-brand-icon">⬡</div>
+
+                <div>
+                    <h1>API Sentinel</h1>
+                    <span>SECURITY MONITORING PLATFORM</span>
+                </div>
+            </div>
+
+            <div class="login-brand-content">
+                <div class="login-shield" aria-hidden="true">
+                    <div class="shield-ring">
+                        <div class="shield-symbol">⬡</div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        autocomplete="current-password"
-                        required
-                    >
+                <span class="login-eyebrow">
+                    AUTHENTICATION THREAT INTELLIGENCE
+                </span>
+
+                <h2>
+                    Visibility into every
+                    <span>authentication threat.</span>
+                </h2>
+
+                <p>
+                    Monitor authentication events, detect
+                    suspicious login patterns, and investigate
+                    security alerts across connected applications.
+                </p>
+
+                <div class="login-feature-list">
+                    <div class="login-feature">
+                        <span class="feature-icon">✓</span>
+                        Authentication event monitoring
+                    </div>
+
+                    <div class="login-feature">
+                        <span class="feature-icon">✓</span>
+                        Automated brute-force detection
+                    </div>
+
+                    <div class="login-feature">
+                        <span class="feature-icon">✓</span>
+                        Centralized security alerts
+                    </div>
                 </div>
+            </div>
 
-                <button type="submit" id="login-button">
-                    Sign In
-                </button>
-
-                <p id="login-message" role="status" aria-live="polite"></p>
-            </form>
+            <div class="login-brand-footer">
+                <span class="status-dot"></span>
+                Secure administrator access
+            </div>
         </section>
+
+        <!-- LOGIN FORM PANEL -->
+        <section class="login-form-panel">
+            <div class="login-form-wrapper">
+
+                <div class="login-mobile-brand">
+                    ⬡ API Sentinel
+                </div>
+
+                <div class="login-heading">
+                    <div class="login-welcome-icon">🔐</div>
+
+                    <h2>Welcome back</h2>
+
+                    <p>
+                        Sign in to access your security
+                        monitoring dashboard.
+                    </p>
+                </div>
+
+                <form id="login-form" class="admin-login-form">
+
+                    <div class="login-field">
+                        <label for="username">
+                            Administrator Username
+                        </label>
+
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Enter your username"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+
+                    <div class="login-field">
+                        <label for="password">
+                            Password
+                        </label>
+
+                        <div class="password-field">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                id="toggle-password"
+                                class="password-toggle"
+                                aria-label="Show password"
+                                aria-pressed="false"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <p id="login-message"
+                       class="login-message"
+                       role="status"
+                       aria-live="polite">
+                    </p>
+
+                    <button
+                        type="submit"
+                        id="login-button"
+                        class="login-submit">
+                        Sign In to Dashboard
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </form>
+
+                <div class="login-security-notice">
+                    <span>◈</span>
+                    <p>
+                        Restricted access. This portal is
+                        intended for authorized API Sentinel
+                        administrators only.
+                    </p>
+                </div>
+
+                <div class="login-form-footer">
+                    <span>© 2026 API Sentinel</span>
+                    <span>Security Monitoring Platform</span>
+                </div>
+
+            </div>
+        </section>
+
     </main>
+
 </body>
 </html>

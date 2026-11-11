@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
-const statsRoutes = require('./routes/statsRoutes');
 require('dotenv').config();
 
 // Database
@@ -15,6 +14,7 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 
 // Initialize Express
 const app = express();
@@ -23,8 +23,6 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use('/api/stats', statsRoutes);
-
 
 // 2. Validate session configuration
 if (!process.env.SESSION_SECRET) {
@@ -32,7 +30,7 @@ if (!process.env.SESSION_SECRET) {
 }
 
 // 3. Session middleware
-// Must be registered BEFORE authentication routes
+// Must be registered BEFORE all routes that require sessions
 app.use(session({
     name: 'sentinel.sid',
     secret: process.env.SESSION_SECRET,
@@ -54,22 +52,22 @@ app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/stats', statsRoutes);
 
 // 6. Database health check
 app.get('/api/health', async (req, res) => {
     try {
         await pool.query('SELECT NOW()');
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'online',
             database: 'connected',
             project: 'API Sentinel'
         });
-
     } catch (error) {
         console.error('DATABASE ERROR:', error);
 
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Database connection failed'
         });
@@ -88,7 +86,6 @@ const startServer = async () => {
                 `API Sentinel running at http://localhost:${PORT}`
             );
         });
-
     } catch (error) {
         console.error('Failed to start application:', error);
         process.exit(1);

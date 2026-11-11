@@ -5,43 +5,252 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Sentinel | Security Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/app.js" defer></script>
 </head>
 <body>
-    <header>
-        <h1>API Sentinel</h1>
-        <p>Authentication Security Monitoring Dashboard</p>
-    </header>
+    <div class="dashboard-layout">
 
-    <main>
-        <section id="overview">
-            <h2>Security Overview</h2>
-
-            <div class="stats">
-                <article>
-                    <h3>Total Login Events</h3>
-                    <p id="total-events">--</p>
-                </article>
-
-                <article>
-                    <h3>Failed Logins</h3>
-                    <p id="failed-logins">--</p>
-                </article>
-
-                <article>
-                    <h3>Security Alerts</h3>
-                    <p id="total-alerts">--</p>
-                </article>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">⬡</div>
+                <div>
+                    <h2>API Sentinel</h2>
+                    <span>SECURITY PLATFORM</span>
+                </div>
             </div>
-        </section>
 
-        <section id="alerts">
-            <h2>Recent Security Alerts</h2>
-            <div id="alerts-container">
-                <p>Dashboard data is not connected yet.</p>
+            <div class="sidebar-section-label">WORKSPACE</div>
+
+            <nav class="sidebar-nav" aria-label="Dashboard navigation">
+                <a href="#overview" class="nav-link active">
+                    <span class="nav-icon">▦</span> Overview
+                </a>
+                <a href="#analytics" class="nav-link">
+                    <span class="nav-icon">◫</span> Analytics
+                </a>
+                <a href="#alerts" class="nav-link">
+                    <span class="nav-icon">⚠</span> Threat Alerts
+                </a>
+                <a href="#applications" class="nav-link">
+                    <span class="nav-icon">⬡</span> Applications
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    <div>
+                        <strong>System Status</strong>
+                        <small id="system-status-text">Checking...</small>
+                    </div>
+                </div>
+                <div class="sidebar-footer">API Sentinel v1.0</div>
             </div>
-        </section>
-    </main>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-wrapper">
+
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Workspace / Overview</div>
+                    <h1>Security Overview</h1>
+                    <p class="page-subtitle">
+                        Monitor authentication activity, security threats
+                        and application health.
+                    </p>
+                </div>
+
+                <div class="topbar-actions">
+                    <span class="live-indicator">
+                        <span class="status-dot"></span>
+                        Live Monitoring
+                    </span>
+                    <button id="refresh-btn"
+                            class="refresh-button"
+                            type="button">
+                        ↻ Refresh
+                    </button>
+                </div>
+            </header>
+
+            <main class="dashboard-content">
+
+                <!-- SECURITY METRICS -->
+                <section id="overview" class="overview-section">
+                    <div class="section-heading">
+                        <h2>Security Metrics</h2>
+                        <span id="last-updated">Waiting for data...</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Total Login Events</span>
+                                <span class="stat-icon blue">◫</span>
+                            </div>
+                            <div class="stat-value" id="total-events">--</div>
+                            <p class="stat-description">
+                                Recorded authentication events
+                            </p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Failed Logins</span>
+                                <span class="stat-icon orange">⚠</span>
+                            </div>
+                            <div class="stat-value" id="failed-logins">--</div>
+                            <p class="stat-description">
+                                Unsuccessful login attempts
+                            </p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Security Alerts</span>
+                                <span class="stat-icon red">◈</span>
+                            </div>
+                            <div class="stat-value" id="total-alerts">--</div>
+                            <p class="stat-description">
+                                Total detected threat alerts
+                            </p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Login Success Rate</span>
+                                <span class="stat-icon green">✓</span>
+                            </div>
+                            <div class="stat-value" id="success-rate">--</div>
+                            <p class="stat-description">
+                                Estimated successful logins
+                            </p>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- ANALYTICS -->
+                <section id="analytics" class="analytics-section">
+                    <div class="section-heading">
+                        <h2>Security Analytics</h2>
+                        <span>Authentication monitoring</span>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <article class="panel activity-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <h3>Authentication Activity</h3>
+                                    <p>Successful vs failed login attempts</p>
+                                </div>
+                                <span class="panel-tag">All Time</span>
+                            </div>
+
+                            <div class="activity-chart" id="activity-chart">
+                                <div class="chart-empty">
+                                    Loading activity...
+                                </div>
+                            </div>
+
+                            <div class="chart-legend">
+                                <span>
+                                    <i class="legend-dot success"></i>
+                                    Estimated successful
+                                </span>
+                                <span>
+                                    <i class="legend-dot failed"></i>
+                                    Failed
+                                </span>
+                            </div>
+                        </article>
+
+                        <article class="panel severity-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <h3>Threat Severity</h3>
+                                    <p>Alert severity distribution</p>
+                                </div>
+                            </div>
+
+                            <div id="severity-chart" class="severity-chart">
+                                <div class="chart-empty">
+                                    Loading severity data...
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- SECURITY ALERTS -->
+                <section id="alerts" class="alerts-section">
+                    <div class="section-heading">
+                        <h2>Recent Security Alerts</h2>
+                        <span class="section-caption">
+                            Latest detected threats
+                        </span>
+                    </div>
+
+                    <div class="panel alerts-panel">
+                        <div class="alerts-toolbar">
+                            <div>
+                                <h3>Threat Detection Log</h3>
+                                <p>
+                                    Security incidents reported by
+                                    monitored applications
+                                </p>
+                            </div>
+
+                            <select id="severity-filter"
+                                    aria-label="Filter alerts by severity">
+                                <option value="all">All Severities</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+
+                        <div id="alerts-container"
+                             class="alerts-container"
+                             aria-live="polite">
+                            Loading security alerts...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- APPLICATION MONITORING -->
+                <section id="applications" class="applications-section">
+                    <div class="section-heading">
+                        <h2>Monitored Applications</h2>
+                        <span>Application inventory</span>
+                    </div>
+
+                    <div class="panel applications-panel">
+                        <div class="application-placeholder">
+                            <div class="placeholder-icon">⬡</div>
+                            <h3>Application Monitoring</h3>
+                            <p>
+                                Application inventory will appear here
+                                once the application listing endpoint
+                                is connected.
+                            </p>
+                            <span class="coming-soon">
+                                Integration Pending
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <footer class="dashboard-footer">
+                    <span>© 2026 API Sentinel</span>
+                    <span>Authentication Security Monitoring</span>
+                </footer>
+
+            </main>
+        </div>
+    </div>
 </body>
 </html>
