@@ -1,9 +1,19 @@
 
-const $ = (id) => document.getElementById(id);
+'use strict';
+
+// ========================================
+// API SENTINEL - INVESTIGATIONS
+// ========================================
+
+const $ = id => document.getElementById(id);
 
 let investigations = [];
 let currentUser = null;
 let canEditInvestigations = false;
+
+// ========================================
+// HELPERS
+// ========================================
 
 function formatDate(value) {
     if (!value) return '—';
@@ -22,118 +32,194 @@ function createCell(row, value) {
     return cell;
 }
 
+function setMessage(id, message) {
+    const element = $(id);
+
+    if (element) {
+        element.textContent = message;
+    }
+}
+
+function setVisible(element, visible) {
+    if (!element) return;
+
+    element.hidden = !visible;
+    element.style.display = visible ? '' : 'none';
+}
+
 // ========================================
 // API REQUEST HELPER
 // ========================================
+
 async function apiRequest(url, options = {}) {
     const response = await fetch(url, {
         credentials: 'same-origin',
+        cache: 'no-store',
         ...options
     });
 
-    if (response.status === 401) {
-        window.location.replace('/login.html');
-        throw new Error('Session expired. Please log in again.');
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
     }
 
-    const data = await response.json();
+    if (response.status === 401) {
+        const error = new Error(
+            'Your session has expired. Please sign in again.'
+        );
+
+        error.status = 401;
+        throw error;
+    }
+
+    if (response.status === 403) {
+        const error = new Error(
+            'You do not have permission to perform this action.'
+        );
+
+        error.status = 403;
+        throw error;
+    }
 
     if (!response.ok) {
-        throw new Error(
+        const error = new Error(
             data.message ||
             data.error ||
-            'Request failed'
+            `Request failed: ${response.status}`
         );
+
+        error.status = response.status;
+        throw error;
     }
 
     return data;
 }
 
 // ========================================
-// LOAD AUTHENTICATED USER AND ROLE
+// AUTHENTICATION AND RBAC
 // ========================================
+
 async function loadCurrentUser() {
     const data = await apiRequest('/api/auth/me');
 
+    if (!data.success || !data.user) {
+        throw new Error('Unable to identify current user.');
+    }
+
     currentUser = data.user;
 
-    canEditInvestigations = [
-        'admin',
-        'analyst'
-    ].includes(currentUser.role);
+    const role = currentUser.role;
 
-    // User Management is available to administrators only.
-    document.querySelectorAll(
-        'a[href="/users.html"]'
-    ).forEach(link => {
-        link.hidden = currentUser.role !== 'admin';
+    if (!['admin', 'analyst', 'viewer'].includes(role)) {
+        throw new Error('Unsupported account role.');
+    }
+
+    canEditInvestigations =
+        role === 'admin' || role === 'analyst';
+
+    // Hide User Management for non-admin accounts.
+    document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href') || '';
+        const path = href.split('?')[0].split('#')[0];
+
+        if (path === '/users.html' || path === 'users.html') {
+            setVisible(link, role === 'admin');
+        }
     });
 
-    // Viewers can inspect investigation details,
-    // but cannot change their values.
-    $('investigation-status').disabled =
-        !canEditInvestigations;
+    // Configure read-only investigation controls.
+    const status = $('investigation-status');
+    const category = $('investigation-category');
+    const notes = $('investigation-notes');
 
-    $('investigation-category').disabled =
-        !canEditInvestigations;
+    if (status) {
+        status.disabled = !canEditInvestigations;
+    }
 
-    $('investigation-notes').readOnly =
-        !canEditInvestigations;
+    if (category) {
+        category.disabled = !canEditInvestigations;
+    }
+
+    if (notes) {
+        notes.readOnly = !canEditInvestigations;
+    }
 
     const saveButton = document.querySelector(
         '#investigation-form button[type="submit"]'
     );
 
-    if (saveButton) {
-        saveButton.hidden = !canEditInvestigations;
-    }
+    setVisible(saveButton, canEditInvestigations);
+
+    console.log(
+        `API Sentinel: signed in as ${currentUser.username} (${role})`
+    );
 }
 
 // ========================================
-// UPDATE METRICS
+// INVESTIGATION METRICS
 // ========================================
+
 function updateMetrics() {
-    $('investigation-total').textContent =
-        investigations.length;
+    const counts = {
+        total: investigations.length,
+        open: 0,
+        investigating: 0,
+        resolved: 0
+    };
 
-    $('investigation-open').textContent =
-        investigations.filter(
-            item => item.status === 'open'
-        ).length;
+    investigations.forEach(item => {
+        if (item.status === 'open') {
+            counts.open++;
+        }
 
-    $('investigation-active').textContent =
-        investigations.filter(
-            item => item.status === 'investigating'
-        ).length;
+        if (item.status === 'investigating') {
+            counts.investigating++;
+        }
 
-    $('investigation-resolved').textContent =
-        investigations.filter(
-            item => item.status === 'resolved'
-        ).length;
+        if (item.status === 'resolved') {
+            counts.resolved++;
+        }
+    });
+
+    setMessage('investigation-total', counts.total);
+    setMessage('investigation-open', counts.open);
+    setMessage('investigation-active', counts.investigating);
+    setMessage('investigation-resolved', counts.resolved);
 }
 
 // ========================================
 // RENDER INVESTIGATIONS
 // ========================================
+
 function renderInvestigations() {
     const body = $('investigations-table-body');
+
+    if (!body) return;
+
     body.replaceChildren();
 
-    const search = $('investigation-search')
-        .value.toLowerCase().trim();
+    const search = (
+        $('investigation-search')?.value || ''
+    ).toLowerCase().trim();
 
-    const status = $('investigation-status-filter').value;
+    const selectedStatus =
+        $('investigation-status-filter')?.value || 'all';
 
     const filtered = investigations.filter(item => {
         const matchesStatus =
-            status === 'all' || item.status === status;
+            selectedStatus === 'all' ||
+            item.status === selectedStatus;
 
         const searchable = [
             item.id,
             item.application_name,
             item.ip_address,
             item.alert_type,
-            item.description
+            item.description,
+            item.status
         ].join(' ').toLowerCase();
 
         return matchesStatus && searchable.includes(search);
@@ -141,6 +227,7 @@ function renderInvestigations() {
 
     if (!filtered.length) {
         const row = document.createElement('tr');
+
         createCell(
             row,
             'No matching investigations'
@@ -154,13 +241,20 @@ function renderInvestigations() {
         const row = document.createElement('tr');
 
         createCell(row, `#${item.id}`);
-        createCell(row, item.application_name);
-        createCell(row, item.ip_address);
-        createCell(row, item.alert_type);
-        createCell(row, item.severity);
+        createCell(row, item.application_name || 'Unknown');
+
         createCell(
             row,
-            item.status?.replaceAll('_', ' ')
+            item.ip_address || 'Not recorded'
+        );
+
+        createCell(row, item.alert_type || 'Unknown');
+        createCell(row, item.severity || 'Unknown');
+
+        createCell(
+            row,
+            String(item.status || 'unknown')
+                .replaceAll('_', ' ')
         );
 
         const actionCell = document.createElement('td');
@@ -173,14 +267,12 @@ function renderInvestigations() {
             ? 'Investigate'
             : 'View Details';
 
-        button.addEventListener(
-            'click',
-            () => openInvestigation(item.id)
-        );
+        button.addEventListener('click', () => {
+            openInvestigation(item.id);
+        });
 
         actionCell.appendChild(button);
         row.appendChild(actionCell);
-
         body.appendChild(row);
     }
 }
@@ -188,30 +280,41 @@ function renderInvestigations() {
 // ========================================
 // LOAD INVESTIGATIONS
 // ========================================
+
 async function loadInvestigations() {
     const data = await apiRequest('/api/investigations');
 
-    investigations = data.investigations || [];
+    investigations = Array.isArray(data.investigations)
+        ? data.investigations
+        : [];
 
     updateMetrics();
     renderInvestigations();
 
-    $('last-updated').textContent =
-        `Updated ${new Date().toLocaleTimeString()}`;
+    setMessage(
+        'last-updated',
+        `Updated ${new Date().toLocaleTimeString()}`
+    );
 }
 
 // ========================================
 // SUSPICIOUS IP MONITORING
 // ========================================
+
 async function loadSuspiciousIPs() {
     const data = await apiRequest(
         '/api/investigations/suspicious-ips'
     );
 
     const body = $('suspicious-ips-table-body');
+
+    if (!body) return;
+
     body.replaceChildren();
 
-    const ips = data.suspicious_ips || [];
+    const ips = Array.isArray(data.suspicious_ips)
+        ? data.suspicious_ips
+        : [];
 
     if (!ips.length) {
         const row = document.createElement('tr');
@@ -228,9 +331,9 @@ async function loadSuspiciousIPs() {
     for (const ip of ips) {
         const row = document.createElement('tr');
 
-        createCell(row, ip.ip_address);
-        createCell(row, ip.application_name);
-        createCell(row, ip.failed_attempts);
+        createCell(row, ip.ip_address || 'Unknown');
+        createCell(row, ip.application_name || 'Unknown');
+        createCell(row, ip.failed_attempts || 0);
         createCell(row, formatDate(ip.last_seen));
 
         body.appendChild(row);
@@ -240,64 +343,97 @@ async function loadSuspiciousIPs() {
 // ========================================
 // OPEN INVESTIGATION
 // ========================================
+
 async function openInvestigation(id) {
     try {
         const data = await apiRequest(
-            `/api/investigations/${id}`
+            `/api/investigations/${encodeURIComponent(id)}`
         );
 
         const item = data.investigation;
 
-        $('investigation-id').value = item.id;
+        if (!item) {
+            throw new Error('Investigation not found.');
+        }
 
-        $('investigation-status').value =
-            item.status || 'open';
+        const idInput = $('investigation-id');
+        const status = $('investigation-status');
+        const category = $('investigation-category');
+        const notes = $('investigation-notes');
 
-        $('investigation-category').value =
-            item.category || 'uncategorized';
+        if (idInput) {
+            idInput.value = item.id;
+        }
 
-        $('investigation-notes').value =
-            item.resolution_notes || '';
+        if (status) {
+            status.value = item.status || 'open';
+        }
 
-        $('investigation-editor-title').textContent =
+        if (category) {
+            category.value = item.category || 'uncategorized';
+        }
+
+        if (notes) {
+            notes.value = item.resolution_notes || '';
+        }
+
+        setMessage(
+            'investigation-editor-title',
             canEditInvestigations
                 ? `Investigate Alert #${item.id}`
-                : `View Alert #${item.id}`;
+                : `View Alert #${item.id}`
+        );
 
-        $('investigation-message').textContent =
+        setMessage(
+            'investigation-message',
             canEditInvestigations
                 ? 'You can update this investigation.'
-                : 'Read-only access: you cannot modify investigations.';
+                : 'Read-only access: you cannot modify investigations.'
+        );
 
-        $('investigation-editor').hidden = false;
+        const editor = $('investigation-editor');
 
-        $('investigation-editor').scrollIntoView({
+        setVisible(editor, true);
+
+        editor?.scrollIntoView({
             behavior: 'smooth',
             block: 'start'
         });
 
     } catch (error) {
-        alert(error.message);
+        console.error('Unable to open investigation:', error);
+
+        setMessage(
+            'system-status-text',
+            `Error: ${error.message}`
+        );
     }
 }
 
 // ========================================
 // SAVE INVESTIGATION
 // ========================================
+
 async function saveInvestigation(event) {
     event.preventDefault();
 
-    // Frontend safeguard; backend RBAC is authoritative.
     if (!canEditInvestigations) {
-        $('investigation-message').textContent =
-            'You do not have permission to edit investigations.';
+        setMessage(
+            'investigation-message',
+            'Access denied: Viewers cannot edit investigations.'
+        );
         return;
     }
 
-    const id = $('investigation-id').value;
-    const message = $('investigation-message');
+    const id = $('investigation-id')?.value;
 
-    message.textContent = 'Saving investigation...';
+    if (!id) {
+        setMessage(
+            'investigation-message',
+            'Select an investigation first.'
+        );
+        return;
+    }
 
     const saveButton = document.querySelector(
         '#investigation-form button[type="submit"]'
@@ -307,9 +443,14 @@ async function saveInvestigation(event) {
         saveButton.disabled = true;
     }
 
+    setMessage(
+        'investigation-message',
+        'Saving investigation...'
+    );
+
     try {
         await apiRequest(
-            `/api/investigations/${id}`,
+            `/api/investigations/${encodeURIComponent(id)}`,
             {
                 method: 'PATCH',
                 headers: {
@@ -324,13 +465,18 @@ async function saveInvestigation(event) {
             }
         );
 
-        message.textContent =
-            'Investigation saved successfully.';
+        setMessage(
+            'investigation-message',
+            'Investigation saved successfully.'
+        );
 
         await loadInvestigations();
 
     } catch (error) {
-        message.textContent = error.message;
+        setMessage(
+            'investigation-message',
+            error.message
+        );
 
     } finally {
         if (saveButton) {
@@ -340,49 +486,58 @@ async function saveInvestigation(event) {
 }
 
 // ========================================
-// REFRESH PAGE
+// REFRESH INVESTIGATIONS
 // ========================================
+
 async function refreshPage() {
-    try {
-        await Promise.all([
-            loadInvestigations(),
-            loadSuspiciousIPs()
-        ]);
+    setMessage('system-status-text', 'Loading investigations...');
 
-        $('system-status-text').textContent =
-            'Connected';
+    const results = await Promise.allSettled([
+        loadInvestigations(),
+        loadSuspiciousIPs()
+    ]);
 
-    } catch (error) {
-        console.error(
-            'Investigation loading failed:',
-            error
-        );
+    const failures = results.filter(
+        result => result.status === 'rejected'
+    );
 
-        $('system-status-text').textContent =
-            'Connection error';
+    if (failures.length === 0) {
+        setMessage('system-status-text', 'Connected');
+        return;
     }
+
+    failures.forEach(result => {
+        console.error(
+            'Investigation data loading error:',
+            result.reason
+        );
+    });
+
+    setMessage(
+        'system-status-text',
+        'Some investigation data could not be loaded.'
+    );
 }
 
 // ========================================
 // LOGOUT
 // ========================================
+
 async function logout() {
     try {
-        const response = await fetch(
-            '/api/auth/logout',
-            {
-                method: 'POST',
-                credentials: 'same-origin'
-            }
-        );
+        const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
 
         if (!response.ok) {
-            throw new Error('Sign out failed');
+            throw new Error('Sign out failed.');
         }
 
         window.location.replace('/login.html');
 
     } catch (error) {
+        console.error('Logout failed:', error);
         alert(error.message);
     }
 }
@@ -390,41 +545,45 @@ async function logout() {
 // ========================================
 // INITIALIZE PAGE
 // ========================================
+
 document.addEventListener('DOMContentLoaded', async () => {
-    $('investigation-search').addEventListener(
+    const search = $('investigation-search');
+    const filter = $('investigation-status-filter');
+    const form = $('investigation-form');
+    const cancelButton = $('investigation-cancel');
+    const refreshButton = $('refresh-btn');
+    const logoutButton = $('logout-btn');
+
+    search?.addEventListener(
         'input',
         renderInvestigations
     );
 
-    $('investigation-status-filter').addEventListener(
+    filter?.addEventListener(
         'change',
         renderInvestigations
     );
 
-    $('investigation-form').addEventListener(
+    form?.addEventListener(
         'submit',
         saveInvestigation
     );
 
-    $('investigation-cancel').addEventListener(
-        'click',
-        () => {
-            $('investigation-editor').hidden = true;
-        }
-    );
+    cancelButton?.addEventListener('click', () => {
+        setVisible($('investigation-editor'), false);
+    });
 
-    $('refresh-btn').addEventListener(
+    refreshButton?.addEventListener(
         'click',
         refreshPage
     );
 
-    $('logout-btn').addEventListener(
+    logoutButton?.addEventListener(
         'click',
         logout
     );
 
     try {
-        // Identify role before rendering investigation controls.
         await loadCurrentUser();
         await refreshPage();
 
@@ -434,7 +593,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             error
         );
 
-        $('system-status-text').textContent =
-            'Unable to initialize';
+        if (error.status === 401) {
+            window.location.replace('/login.html');
+            return;
+        }
+
+        setMessage(
+            'system-status-text',
+            `Unable to initialize: ${error.message}`
+        );
     }
 });
