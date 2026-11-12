@@ -787,3 +787,30 @@ section {
         flex-direction: column;
     }
 }
+
+.sidebar-logout {
+    margin-top: auto;
+    padding: 20px;
+    border-top: 1px solid #223047;
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid rgba(251, 113, 133, 0.2);
+    border-radius: 10px;
+    background: rgba(251, 113, 133, 0.08);
+    color: #fb7185;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.logout-button:hover {
+    background: rgba(251, 113, 133, 0.16);
+    border-color: #fb7185;
+}

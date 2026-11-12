@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | API Sentinel</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/users.js" defer></script>
+</head>
+<body>
+<div class="dashboard-layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">⬡</div>
+            <div>
+                <h2>API Sentinel</h2>
+                <span>SECURITY PLATFORM</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section-label">WORKSPACE</div>
+
+        <nav class="sidebar-nav" aria-label="Main navigation">
+            <a href="/index.html" class="nav-link">
+                <span class="nav-icon">▦</span> Dashboard
+            </a>
+            <a href="/index.html#analytics" class="nav-link">
+                <span class="nav-icon">◫</span> Analytics
+            </a>
+            <a href="/index.html#alerts" class="nav-link">
+                <span class="nav-icon">⚠</span> Threat Alerts
+            </a>
+            <a href="/investigations.html" class="nav-link">
+                <span class="nav-icon">⌕</span> Investigations
+            </a>
+            <a href="/users.html" class="nav-link active">
+                <span class="nav-icon">♙</span> User Management
+            </a>
+            <a href="/index.html#applications" class="nav-link">
+                <span class="nav-icon">⬡</span> Applications
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>System Status</strong>
+                    <small id="system-status-text">Checking...</small>
+                </div>
+            </div>
+            <div class="sidebar-footer">API Sentinel v1.0</div>
+        </div>
+
+        <div class="sidebar-logout">
+            <button type="button" id="logout-btn" class="logout-button">
+                <span>⏻</span> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div>
+                <div class="breadcrumb">Workspace / User Management</div>
+                <h1>User Management</h1>
+                <p class="page-subtitle">
+                    Manage accounts, permissions and access to API Sentinel.
+                </p>
+            </div>
+
+            <div class="topbar-actions">
+                <button type="button"
+                        id="refresh-btn"
+                        class="refresh-button">
+                    ↻ Refresh
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+
+            <!-- ACCOUNT OVERVIEW -->
+            <section class="overview-section">
+                <div class="section-heading">
+                    <h2>Account Overview</h2>
+                    <span id="last-updated">Waiting for data...</span>
+                </div>
+
+                <div class="stats-grid">
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Total Users</span>
+                            <span class="stat-icon blue">♙</span>
+                        </div>
+                        <div class="stat-value" id="total-users">--</div>
+                        <p class="stat-description">Registered accounts</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Administrators</span>
+                            <span class="stat-icon red">◆</span>
+                        </div>
+                        <div class="stat-value" id="total-admins">--</div>
+                        <p class="stat-description">Administrative accounts</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Analysts</span>
+                            <span class="stat-icon orange">⌕</span>
+                        </div>
+                        <div class="stat-value" id="total-analysts">--</div>
+                        <p class="stat-description">Security analysts</p>
+                    </article>
+
+                    <article class="stat-card">
+                        <div class="stat-header">
+                            <span>Viewers</span>
+                            <span class="stat-icon green">◉</span>
+                        </div>
+                        <div class="stat-value" id="total-viewers">--</div>
+                        <p class="stat-description">Read-only accounts</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- REGISTERED USERS -->
+            <section class="users-section">
+                <div class="panel">
+                    <div class="alerts-toolbar">
+                        <div>
+                            <h3>Registered Users</h3>
+                            <p>Manage registered API Sentinel accounts</p>
+                        </div>
+
+                        <input type="search"
+                               id="user-search"
+                               placeholder="Search users..."
+                               aria-label="Search users">
+                    </div>
+
+                    <div class="investigation-table-wrapper">
+                        <table class="investigation-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Full Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="users-table-body">
+                                <tr>
+                                    <td colspan="8">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EDIT USER -->
+            <section class="users-section"
+                     id="edit-user-section"
+                     hidden>
+                <div class="section-heading">
+                    <h2 id="edit-user-title">Edit User</h2>
+                    <span>Administrator access required</span>
+                </div>
+
+                <div class="panel">
+                    <form id="edit-user-form">
+                        <input type="hidden" id="edit-user-id">
+
+                        <div class="investigation-form-grid">
+                            <div class="form-group">
+                                <label for="edit-full-name">Full Name</label>
+                                <input id="edit-full-name"
+                                       type="text"
+                                       maxlength="150"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-username">Username</label>
+                                <input id="edit-username"
+                                       type="text"
+                                       minlength="3"
+                                       maxlength="100"
+                                       pattern="[a-zA-Z0-9_.-]+"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-email">Email</label>
+                                <input id="edit-email"
+                                       type="email"
+                                       maxlength="255"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-role">Access Role</label>
+                                <select id="edit-role" required>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="analyst">Analyst</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-status">Account Status</label>
+                                <select id="edit-status" required>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <p id="edit-user-message"
+                           role="status"
+                           aria-live="polite"></p>
+
+                        <button type="submit" class="refresh-button">
+                            Save Changes
+                        </button>
+
+                        <button type="button"
+                                id="edit-user-cancel"
+                                class="refresh-button">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- RESET PASSWORD -->
+            <section class="users-section"
+                     id="reset-password-section"
+                     hidden>
+                <div class="section-heading">
+                    <h2 id="reset-password-title">Reset Password</h2>
+                    <span>Administrator access required</span>
+                </div>
+
+                <div class="panel">
+                    <form id="reset-password-form">
+                        <input type="hidden" id="reset-password-user-id">
+
+                        <div class="investigation-form-grid">
+                            <div class="form-group">
+                                <label for="reset-new-password">
+                                    New Temporary Password
+                                </label>
+                                <input id="reset-new-password"
+                                       type="password"
+                                       minlength="12"
+                                       autocomplete="new-password"
+                                       required>
+                                <small>
+                                    Minimum 12 characters, maximum 72 UTF-8 bytes.
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reset-confirm-password">
+                                    Confirm New Password
+                                </label>
+                                <input id="reset-confirm-password"
+                                       type="password"
+                                       minlength="12"
+                                       autocomplete="new-password"
+                                       required>
+                            </div>
+                        </div>
+
+                        <p id="reset-password-message"
+                           role="status"
+                           aria-live="polite"></p>
+
+                        <button type="submit" class="refresh-button">
+                            Reset Password
+                        </button>
+
+                        <button type="button"
+                                id="reset-password-cancel"
+                                class="refresh-button">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- CREATE USER -->
+            <section class="users-section">
+                <div class="section-heading">
+                    <h2>Create User</h2>
+                    <span>Administrator access required</span>
+                </div>
+
+                <div class="panel">
+                    <form id="create-user-form">
+                        <div class="investigation-form-grid">
+                            <div class="form-group">
+                                <label for="user-full-name">Full Name</label>
+                                <input id="user-full-name"
+                                       type="text"
+                                       maxlength="150"
+                                       autocomplete="name"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-username">Username</label>
+                                <input id="user-username"
+                                       type="text"
+                                       minlength="3"
+                                       maxlength="100"
+                                       pattern="[a-zA-Z0-9_.-]+"
+                                       autocomplete="off"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-email">Email</label>
+                                <input id="user-email"
+                                       type="email"
+                                       maxlength="255"
+                                       autocomplete="off"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-role">Access Role</label>
+                                <select id="user-role" required>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="analyst">Analyst</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-password">
+                                    Temporary Password
+                                </label>
+                                <input id="user-password"
+                                       type="password"
+                                       minlength="12"
+                                       autocomplete="new-password"
+                                       required>
+                                <small>
+                                    Minimum 12 characters; maximum 72 UTF-8 bytes.
+                                </small>
+                            </div>
+                        </div>
+
+                        <p id="user-form-message"
+                           role="status"
+                           aria-live="polite"></p>
+
+                        <button type="submit" class="refresh-button">
+                            Create User
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <footer class="dashboard-footer">
+                <span>© 2026 API Sentinel</span>
+                <span>Identity & Access Management</span>
+            </footer>
+
+        </main>
+    </div>
+</div>
+</body>
+</html>

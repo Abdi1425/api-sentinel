@@ -23,17 +23,28 @@
 
             <div class="sidebar-section-label">WORKSPACE</div>
 
-            <nav class="sidebar-nav" aria-label="Dashboard navigation">
-                <a href="#overview" class="nav-link active">
-                    <span class="nav-icon">▦</span> Overview
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <a href="/index.html" class="nav-link active">
+                    <span class="nav-icon">▦</span> Dashboard
                 </a>
-                <a href="#analytics" class="nav-link">
+
+                <a href="/index.html#analytics" class="nav-link">
                     <span class="nav-icon">◫</span> Analytics
                 </a>
-                <a href="#alerts" class="nav-link">
+
+                <a href="/index.html#alerts" class="nav-link">
                     <span class="nav-icon">⚠</span> Threat Alerts
                 </a>
-                <a href="#applications" class="nav-link">
+
+                <a href="/investigations.html" class="nav-link">
+                    <span class="nav-icon">⌕</span> Investigations
+                </a>
+
+                <a href="/users.html" class="nav-link">
+                    <span class="nav-icon">♙</span> User Management
+                </a>
+
+                <a href="/index.html#applications" class="nav-link">
                     <span class="nav-icon">⬡</span> Applications
                 </a>
             </nav>
@@ -47,6 +58,13 @@
                     </div>
                 </div>
                 <div class="sidebar-footer">API Sentinel v1.0</div>
+            </div>
+
+            <div class="sidebar-logout">
+                <button type="button" id="logout-btn" class="logout-button">
+                    <span>⏻</span>
+                    Sign Out
+                </button>
             </div>
         </aside>
 
@@ -68,6 +86,7 @@
                         <span class="status-dot"></span>
                         Live Monitoring
                     </span>
+
                     <button id="refresh-btn"
                             class="refresh-button"
                             type="button">
@@ -86,6 +105,7 @@
                     </div>
 
                     <div class="stats-grid">
+
                         <article class="stat-card">
                             <div class="stat-header">
                                 <span>Total Login Events</span>
@@ -129,6 +149,7 @@
                                 Estimated successful logins
                             </p>
                         </article>
+
                     </div>
                 </section>
 
@@ -244,6 +265,7 @@
                     </div>
                 </section>
 
+                <!-- FOOTER -->
                 <footer class="dashboard-footer">
                     <span>© 2026 API Sentinel</span>
                     <span>Authentication Security Monitoring</span>

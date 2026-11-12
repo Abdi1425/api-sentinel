@@ -1,6 +1,8 @@
+
 const pool = require('../config/db');
 
 async function detectBruteForce(applicationId, ipAddress) {
+    // Count failed logins within the last five minutes
     const result = await pool.query(
         `SELECT COUNT(*) AS failed_attempts
          FROM login_events
@@ -13,38 +15,57 @@ async function detectBruteForce(applicationId, ipAddress) {
 
     const failedAttempts = Number(result.rows[0].failed_attempts);
 
-   if (failedAttempts >= 5) {
-    const existingAlert = await pool.query(
-    `SELECT id
-     FROM threat_alerts
-     WHERE application_id = $1
-       AND alert_type = 'BRUTE_FORCE_ATTEMPT'
-       AND description LIKE $2
-       AND created_at >= NOW() - INTERVAL '5 minutes'
-     LIMIT 1`,
-    [applicationId, `%from IP ${ipAddress} within 5 minutes`]
-);
+    // Trigger detection after five failed attempts
+    if (failedAttempts < 5) {
+        return failedAttempts;
+    }
 
-if (existingAlert.rows.length > 0) {
-    return failedAttempts;
-}
-    await pool.query(
-        `INSERT INTO threat_alerts
-         (application_id, alert_type, description, severity, status)
-         VALUES ($1, $2, $3, $4, $5)`,
+    // Avoid duplicate recent alerts for the same application and IP
+    const existingAlert = await pool.query(
+        `SELECT id
+         FROM threat_alerts
+         WHERE application_id = $1
+           AND ip_address = $2::inet
+           AND alert_type = 'BRUTE_FORCE_ATTEMPT'
+           AND created_at >= NOW() - INTERVAL '5 minutes'
+         LIMIT 1`,
+        [applicationId, ipAddress]
+    );
+
+    if (existingAlert.rows.length > 0) {
+        return failedAttempts;
+    }
+
+    // Create an alert with a structured source IP and category
+    const alert = await pool.query(
+        `INSERT INTO threat_alerts (
+            application_id,
+            alert_type,
+            description,
+            severity,
+            status,
+            ip_address,
+            category
+        )
+        VALUES ($1, $2, $3, $4, $5, $6::inet, $7)
+        RETURNING id, ip_address, severity, status`,
         [
             applicationId,
             'BRUTE_FORCE_ATTEMPT',
             `Detected ${failedAttempts} failed login attempts from IP ${ipAddress} within 5 minutes`,
             'high',
-            'open'
+            'open',
+            ipAddress,
+            'brute_force'
         ]
     );
 
-    console.log(`Security alert: Possible brute-force attack from ${ipAddress}`);
-}
+    console.log(
+        `Security alert #${alert.rows[0].id}: ` +
+        `Possible brute-force attack from ${ipAddress}`
+    );
 
-return failedAttempts;
+    return failedAttempts;
 }
 
 module.exports = { detectBruteForce };

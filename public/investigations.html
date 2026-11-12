@@ -1,0 +1,270 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigations | API Sentinel</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/investigations.js" defer></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">⬡</div>
+                <div>
+                    <h2>API Sentinel</h2>
+                    <span>SECURITY PLATFORM</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section-label">WORKSPACE</div>
+
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <a href="/index.html" class="nav-link">
+                    <span class="nav-icon">▦</span> Dashboard
+                </a>
+                <a href="/index.html#analytics" class="nav-link">
+                    <span class="nav-icon">◫</span> Analytics
+                </a>
+                <a href="/index.html#alerts" class="nav-link">
+                    <span class="nav-icon">⚠</span> Threat Alerts
+                </a>
+                <a href="/investigations.html" class="nav-link active">
+                    <span class="nav-icon">⌕</span> Investigations
+                </a>
+                <a href="/users.html" class="nav-link">
+                    <span class="nav-icon">♙</span> User Management
+                </a>
+                <a href="/index.html#applications" class="nav-link">
+                    <span class="nav-icon">⬡</span> Applications
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    <div>
+                        <strong>System Status</strong>
+                        <small id="system-status-text">Checking...</small>
+                    </div>
+                </div>
+                <div class="sidebar-footer">API Sentinel v1.0</div>
+            </div>
+
+            <div class="sidebar-logout">
+                <button type="button" id="logout-btn" class="logout-button">
+                    <span>⏻</span> Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Workspace / Investigations</div>
+                    <h1>Investigation Management</h1>
+                    <p class="page-subtitle">
+                        Review security incidents, investigate suspicious IPs
+                        and document incident resolution.
+                    </p>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" id="refresh-btn" class="refresh-button">
+                        ↻ Refresh
+                    </button>
+                </div>
+            </header>
+
+            <main class="dashboard-content">
+
+                <section class="overview-section">
+                    <div class="section-heading">
+                        <h2>Investigation Overview</h2>
+                        <span id="last-updated">Waiting for data...</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Total Investigations</span>
+                                <span class="stat-icon blue">◈</span>
+                            </div>
+                            <div class="stat-value" id="investigation-total">--</div>
+                            <p class="stat-description">Recorded security cases</p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Open Cases</span>
+                                <span class="stat-icon red">⚠</span>
+                            </div>
+                            <div class="stat-value" id="investigation-open">--</div>
+                            <p class="stat-description">Awaiting review</p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Investigating</span>
+                                <span class="stat-icon orange">⌕</span>
+                            </div>
+                            <div class="stat-value" id="investigation-active">--</div>
+                            <p class="stat-description">Active investigations</p>
+                        </article>
+
+                        <article class="stat-card">
+                            <div class="stat-header">
+                                <span>Resolved</span>
+                                <span class="stat-icon green">✓</span>
+                            </div>
+                            <div class="stat-value" id="investigation-resolved">--</div>
+                            <p class="stat-description">Resolved security cases</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="investigations-section">
+                    <div class="panel investigation-panel">
+                        <div class="alerts-toolbar">
+                            <div>
+                                <h3>Security Investigations</h3>
+                                <p>Review and manage detected incidents</p>
+                            </div>
+                            <div class="investigation-filters">
+                                <input type="search"
+                                       id="investigation-search"
+                                       placeholder="Search investigations..."
+                                       aria-label="Search investigations">
+                                <select id="investigation-status-filter"
+                                        aria-label="Filter by status">
+                                    <option value="all">All Statuses</option>
+                                    <option value="open">Open</option>
+                                    <option value="investigating">Investigating</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="false_positive">False Positive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="investigation-table-wrapper">
+                            <table class="investigation-table">
+                                <thead>
+                                    <tr>
+                                        <th>Case ID</th>
+                                        <th>Application</th>
+                                        <th>Source IP</th>
+                                        <th>Threat Type</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="investigations-table-body">
+                                    <tr>
+                                        <td colspan="7">Loading investigations...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel suspicious-ips-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Suspicious IP Activity</h3>
+                                <p>IP addresses with failed authentication attempts</p>
+                            </div>
+                        </div>
+                        <div class="investigation-table-wrapper">
+                            <table class="investigation-table">
+                                <thead>
+                                    <tr>
+                                        <th>IP Address</th>
+                                        <th>Application</th>
+                                        <th>Failed Logins</th>
+                                        <th>Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suspicious-ips-table-body">
+                                    <tr>
+                                        <td colspan="4">Loading IP activity...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="panel investigation-editor"
+                         id="investigation-editor" hidden>
+                        <div class="panel-heading">
+                            <div>
+                                <h3 id="investigation-editor-title">
+                                    Investigation Details
+                                </h3>
+                                <p>Update the selected security case</p>
+                            </div>
+                        </div>
+
+                        <form id="investigation-form">
+                            <input type="hidden" id="investigation-id">
+
+                            <div class="investigation-form-grid">
+                                <div class="form-group">
+                                    <label for="investigation-status">Case Status</label>
+                                    <select id="investigation-status" required>
+                                        <option value="open">Open</option>
+                                        <option value="investigating">Investigating</option>
+                                        <option value="resolved">Resolved</option>
+                                        <option value="false_positive">False Positive</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="investigation-category">Threat Category</label>
+                                    <select id="investigation-category" required>
+                                        <option value="uncategorized">Uncategorized</option>
+                                        <option value="brute_force">Brute Force</option>
+                                        <option value="suspicious_login">Suspicious Login</option>
+                                        <option value="credential_stuffing">Credential Stuffing</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="investigation-notes">
+                                    Investigation Notes
+                                </label>
+                                <textarea id="investigation-notes"
+                                          rows="5"
+                                          maxlength="5000"
+                                          placeholder="Record evidence, analysis and resolution notes..."></textarea>
+                            </div>
+
+                            <p id="investigation-message" role="status"></p>
+
+                            <div class="investigation-actions">
+                                <button type="submit" class="refresh-button">
+                                    Save Investigation
+                                </button>
+                                <button type="button"
+                                        id="investigation-cancel"
+                                        class="refresh-button">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <footer class="dashboard-footer">
+                    <span>© 2026 API Sentinel</span>
+                    <span>Security Investigation Management</span>
+                </footer>
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>

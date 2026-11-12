@@ -15,6 +15,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const investigationRoutes = require('./routes/investigationRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Initialize Express
 const app = express();
@@ -53,6 +55,8 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/investigations', investigationRoutes);
+app.use('/api/users', userRoutes);
 
 // 6. Database health check
 app.get('/api/health', async (req, res) => {

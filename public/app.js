@@ -518,3 +518,30 @@ function initializeNavigation() {
         });
     });
 }
+
+document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    const logoutButton = document.getElementById('logout-btn');
+
+    logoutButton.disabled = true;
+    logoutButton.textContent = 'Signing out...';
+
+    try {
+        const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) {
+            throw new Error('Logout failed');
+        }
+
+        window.location.replace('/login.html');
+    } catch (error) {
+        console.error('Logout error:', error);
+        alert('Unable to sign out. Please try again.');
+
+        logoutButton.disabled = false;
+        logoutButton.textContent = '⏻ Sign Out';
+    }
+});
+
