@@ -3,13 +3,20 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
+const path = require('path');
 require('dotenv').config();
 
-// Database
+// ========================================
+// DATABASE
+// ========================================
+
 const pool = require('./config/db');
 const initializeDatabase = require('./config/initDb');
 
-// Routes
+// ========================================
+// ROUTES
+// ========================================
+
 const applicationRoutes = require('./routes/applicationRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const alertRoutes = require('./routes/alertRoutes');
@@ -18,21 +25,31 @@ const statsRoutes = require('./routes/statsRoutes');
 const investigationRoutes = require('./routes/investigationRoutes');
 const userRoutes = require('./routes/userRoutes');
 
-// Initialize Express
-const app = express();
+// ========================================
+// EXPRESS APPLICATION
+// ========================================
 
-// 1. Security and request middleware
+const app = express();
+const publicDirectory = path.join(__dirname, 'public');
+
+// ========================================
+// SECURITY MIDDLEWARE
+// ========================================
+
+app.disable('x-powered-by');
+
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
-// 2. Validate session configuration
 if (!process.env.SESSION_SECRET) {
     throw new Error('SESSION_SECRET is missing from .env');
 }
 
-// 3. Session middleware
-// Must be registered BEFORE all routes that require sessions
+// ========================================
+// SESSION CONFIGURATION
+// ========================================
+
 app.use(session({
     name: 'sentinel.sid',
     secret: process.env.SESSION_SECRET,
@@ -46,10 +63,161 @@ app.use(session({
     }
 }));
 
-// 4. Frontend
-app.use(express.static('public'));
+// ========================================
+// PAGE AUTHENTICATION
+// ========================================
 
-// 5. API routes
+async function requirePageAuth(req, res, next) {
+    try {
+        const userId = req.session?.userId;
+
+        // Database-backed user
+        if (Number.isInteger(userId)) {
+            const result = await pool.query(
+                `SELECT id, username, role, status
+                 FROM system_users
+                 WHERE id = $1`,
+                [userId]
+            );
+
+            const user = result.rows[0];
+
+            if (!user || user.status !== 'active') {
+                return res.redirect('/login.html');
+            }
+
+            if (!['admin', 'analyst', 'viewer'].includes(user.role)) {
+                return res.status(403).send('Access denied');
+            }
+
+            req.pageUser = user;
+            return next();
+        }
+
+        // Environment administrator
+        if (
+            userId === null &&
+            req.session?.isAdmin === true &&
+            req.session?.role === 'admin' &&
+            req.session?.username === process.env.ADMIN_USERNAME
+        ) {
+            req.pageUser = {
+                id: null,
+                username: req.session.username,
+                role: 'admin'
+            };
+
+            return next();
+        }
+
+        return res.redirect('/login.html');
+
+    } catch (error) {
+        console.error('Page authentication error:', error);
+
+        return res.status(500).send(
+            'Unable to verify authentication'
+        );
+    }
+}
+
+// ========================================
+// ADMIN PAGE AUTHORIZATION
+// ========================================
+
+function requireAdminPage(req, res, next) {
+    if (req.pageUser?.role !== 'admin') {
+        return res.status(403).send(
+            'Access denied: administrator privileges required'
+        );
+    }
+
+    next();
+}
+
+// ========================================
+// PUBLIC LOGIN PAGE
+// ========================================
+
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(publicDirectory, 'login.html'));
+});
+
+// ========================================
+// PROTECTED DASHBOARD PAGES
+// ========================================
+
+app.get(
+    ['/', '/index.html'],
+    requirePageAuth,
+    (req, res) => {
+        res.set('Cache-Control', 'no-store');
+
+        res.sendFile(
+            path.join(publicDirectory, 'index.html')
+        );
+    }
+);
+
+app.get(
+    '/investigations.html',
+    requirePageAuth,
+    (req, res) => {
+        res.set('Cache-Control', 'no-store');
+
+        res.sendFile(
+            path.join(publicDirectory, 'investigations.html')
+        );
+    }
+);
+
+app.get(
+    '/users.html',
+    requirePageAuth,
+    requireAdminPage,
+    (req, res) => {
+        res.set('Cache-Control', 'no-store');
+
+        res.sendFile(
+            path.join(publicDirectory, 'users.html')
+        );
+    }
+);
+
+// ========================================
+// STATIC ASSETS
+// ========================================
+
+// Allow CSS, JavaScript and images to load.
+// HTML documents are served only by explicit routes above.
+app.use(express.static(publicDirectory, {
+    index: false,
+    dotfiles: 'deny',
+    setHeaders: (res, filePath) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        if (path.extname(filePath).toLowerCase() === '.html') {
+            res.setHeader('Cache-Control', 'no-store');
+        }
+    }
+}));
+
+// Block other direct HTML requests.
+app.use((req, res, next) => {
+    if (
+        req.method === 'GET' &&
+        req.path.toLowerCase().endsWith('.html')
+    ) {
+        return res.status(404).send('Page not found');
+    }
+
+    next();
+});
+
+// ========================================
+// API ROUTES
+// ========================================
+
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/events', eventRoutes);
@@ -58,7 +226,10 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/investigations', investigationRoutes);
 app.use('/api/users', userRoutes);
 
-// 6. Database health check
+// ========================================
+// DATABASE HEALTH CHECK
+// ========================================
+
 app.get('/api/health', async (req, res) => {
     try {
         await pool.query('SELECT NOW()');
@@ -68,6 +239,7 @@ app.get('/api/health', async (req, res) => {
             database: 'connected',
             project: 'API Sentinel'
         });
+
     } catch (error) {
         console.error('DATABASE ERROR:', error);
 
@@ -78,7 +250,10 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
-// 7. Start server
+// ========================================
+// START SERVER
+// ========================================
+
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
@@ -90,6 +265,7 @@ const startServer = async () => {
                 `API Sentinel running at http://localhost:${PORT}`
             );
         });
+
     } catch (error) {
         console.error('Failed to start application:', error);
         process.exit(1);
